@@ -11,14 +11,17 @@ class App {
         this.cpu = null;
         this.codeGen = null;
         this.visualizer = null;
+        this.diagram = null;
         this.compiled = false;
         this.running = false;
         this.runTimer = null;
         this.runSpeed = 500;
         this.instructions = [];
+        this.executedIndices = new Set();
 
         this.initUI();
         this.initVisualizer();
+        this.initDiagram();
         this.loadExamples();
         this.loadDefaultCode();
         this.updateLineNumbers();
@@ -91,6 +94,11 @@ class App {
         this.visualizer.setArchitecture(this.arch);
     }
 
+    initDiagram() {
+        this.diagram = new CPUDiagram(this.arch);
+        this.diagram.mount('cpu-diagram');
+    }
+
     loadExamples() {
         const select = document.getElementById('example-select');
         for (const key of Object.keys(Examples)) {
@@ -136,6 +144,10 @@ class App {
 
         this.visualizer.setArchitecture(this.arch);
         this.visualizer.clearConsole();
+        this.diagram.setArchitecture(this.arch);
+
+        const diagLabel = document.getElementById('diagram-arch-label');
+        if (diagLabel) diagLabel.textContent = this.arch.displayName;
 
         this.setCompileStatus(`Switched to ${this.arch.displayName}`, 'info');
 
@@ -146,6 +158,7 @@ class App {
             this.visualizer.renderRegisters({}, new Set(), {});
             this.visualizer.renderPipeline(null);
             this.visualizer.updateStatus(this.arch.displayName + ' - Ready', null);
+            this.diagram.reset();
         }
     }
 
@@ -177,6 +190,10 @@ class App {
             this.visualizer.appendConsole(`Generated ${this.instructions.length} instructions`, 'info');
             this.visualizer.appendConsole(`Structs: ${[...this.codeGen.structs.keys()].join(', ') || 'none'}`, 'info');
 
+            this.diagram.setCodeGen(this.codeGen);
+            this.diagram.reset();
+            this.executedIndices.clear();
+
             this.setCompileStatus(`Success: ${this.instructions.length} instructions generated for ${this.arch.displayName}`, 'success');
             this.compiled = true;
             this.setButtonsState(true);
@@ -197,9 +214,13 @@ class App {
         }
 
         try {
+            const prevIndex = this.cpu.instructionIndex;
             const result = this.cpu.step();
+            this.executedIndices.add(prevIndex);
             this.visualizer.update(this.cpu, result);
             this.visualizer.updateStatus('Stepping...', this.cpu);
+            this.diagram.update(this.cpu, result);
+            this.markExecutedInstructions();
 
             if (result.halted) {
                 this.pause();
@@ -229,8 +250,12 @@ class App {
                 return;
             }
             try {
+                const prevIndex = this.cpu.instructionIndex;
                 const result = this.cpu.step();
+                this.executedIndices.add(prevIndex);
                 this.visualizer.update(this.cpu, result);
+                this.diagram.update(this.cpu, result);
+                this.markExecutedInstructions();
 
                 if (result.halted) {
                     this.pause();
@@ -275,6 +300,7 @@ class App {
         if (this.cpu && this.instructions.length > 0) {
             this.cpu.reset();
             this.cpu.load(this.instructions);
+            this.executedIndices.clear();
             this.visualizer.renderAssembly(this.instructions, 0);
             this.visualizer.renderRegisters(this.cpu.registers, new Set(), this.cpu.flags);
             this.visualizer.renderMemory(this.cpu, new Set());
@@ -282,7 +308,19 @@ class App {
             this.visualizer.updateStatus('Reset', this.cpu);
             this.visualizer.clearConsole();
             this.visualizer.appendConsole('CPU reset', 'info');
+            this.diagram.reset();
         }
+    }
+
+    markExecutedInstructions() {
+        const allInstrs = document.querySelectorAll('#assembly-view .asm-instruction');
+        allInstrs.forEach((el, i) => {
+            if (this.executedIndices.has(i)) {
+                el.classList.add('executed');
+            } else {
+                el.classList.remove('executed');
+            }
+        });
     }
 
     setCompileStatus(message, type) {

@@ -263,8 +263,23 @@ html, body {
     min-height: 0;
 }
 
+.diagram-panel {
+    height: 320px;
+    flex-shrink: 0;
+}
+
+.cpu-diagram {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-secondary);
+    padding: 4px;
+}
+
 .memory-panel {
-    height: 200px;
+    height: 160px;
     flex-shrink: 0;
 }
 
@@ -764,4 +779,58 @@ html, body {
 
 .pulse {
     animation: pulse 1s infinite;
+}
+
+/* ============================================
+   CPU Diagram SVG
+   ============================================ */
+.cpu-diagram svg {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.cpu-diagram rect {
+    transition: fill 0.3s ease, stroke 0.3s ease;
+}
+
+.cpu-diagram path {
+    transition: stroke 0.3s ease, stroke-width 0.3s ease;
+}
+
+.cpu-diagram line {
+    transition: stroke 0.3s ease, stroke-width 0.3s ease;
+}
+
+.cpu-diagram text {
+    transition: fill 0.3s ease;
+    user-select: none;
+}
+
+@keyframes dataFlow {
+    0% { stroke-dashoffset: 20; }
+    100% { stroke-dashoffset: 0; }
+}
+
+.cpu-diagram .bus-active {
+    animation: dataFlow 0.5s linear infinite;
+}
+
+/* ============================================
+   Assembly - Instruction Set with Addresses
+   ============================================ */
+.asm-instruction .asm-addr {
+    transition: color 0.3s;
+}
+
+.asm-instruction.current .asm-addr {
+    color: var(--accent-yellow);
+    font-weight: 700;
+}
+
+.asm-instruction.executed {
+    opacity: 0.7;
+}
+
+.asm-instruction.executed .asm-mnemonic {
+    color: var(--text-muted);
 }
