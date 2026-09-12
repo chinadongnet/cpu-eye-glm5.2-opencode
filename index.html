@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CPU Eye - C++ CPU Simulator</title>
+    <link rel="stylesheet" href="src/css/style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-left">
+                <h1 class="logo">CPU Eye</h1>
+                <span class="subtitle">C++ CPU Simulator</span>
+            </div>
+            <div class="header-center">
+                <div class="arch-selector">
+                    <label>Architecture:</label>
+                    <div class="arch-buttons">
+                        <button class="arch-btn active" data-arch="x86">x86 (32-bit)</button>
+                        <button class="arch-btn" data-arch="x86_64">x86_64 (64-bit)</button>
+                        <button class="arch-btn" data-arch="arm32">ARM (32-bit)</button>
+                        <button class="arch-btn" data-arch="arm64">ARM64</button>
+                    </div>
+                </div>
+            </div>
+            <div class="header-right">
+                <button id="btn-compile" class="ctrl-btn compile-btn">Compile</button>
+                <button id="btn-run" class="ctrl-btn run-btn" disabled>Run</button>
+                <button id="btn-step" class="ctrl-btn step-btn" disabled>Step</button>
+                <button id="btn-pause" class="ctrl-btn pause-btn" disabled>Pause</button>
+                <button id="btn-reset" class="ctrl-btn reset-btn" disabled>Reset</button>
+                <select id="speed-select" class="speed-select">
+                    <option value="2000">0.5x (Slow)</option>
+                    <option value="1000" selected>1x (Normal)</option>
+                    <option value="500">2x (Fast)</option>
+                    <option value="200">5x (Very Fast)</option>
+                    <option value="50">20x (Turbo)</option>
+                </select>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Left Panel: Code Editor + Examples -->
+            <section class="panel code-panel">
+                <div class="panel-header">
+                    <h2>Source Code (C++)</h2>
+                    <select id="example-select" class="example-select">
+                        <option value="">-- Select Example --</option>
+                    </select>
+                </div>
+                <div class="code-editor-wrapper">
+                    <div class="line-numbers" id="line-numbers"></div>
+                    <textarea id="code-editor" spellcheck="false" autocomplete="off"></textarea>
+                </div>
+                <div id="compile-status" class="compile-status"></div>
+            </section>
+
+            <!-- Center Panel: Assembly + CPU State -->
+            <section class="panel center-panel">
+                <!-- Assembly View -->
+                <div class="sub-panel assembly-panel">
+                    <div class="panel-header">
+                        <h2 id="asm-title">Assembly</h2>
+                        <span id="asm-arch-label" class="arch-label">x86</span>
+                    </div>
+                    <div id="assembly-view" class="assembly-view">
+                        <div class="asm-placeholder">Compile code to see assembly</div>
+                    </div>
+                </div>
+
+                <!-- Memory View -->
+                <div class="sub-panel memory-panel">
+                    <div class="panel-header">
+                        <h2>Memory / Stack</h2>
+                        <div class="mem-controls">
+                            <button id="mem-stack-btn" class="mem-tab-btn active">Stack</button>
+                            <button id="mem-heap-btn" class="mem-tab-btn">Heap</button>
+                            <button id="mem-data-btn" class="mem-tab-btn">Data</button>
+                        </div>
+                    </div>
+                    <div id="memory-view" class="memory-view"></div>
+                </div>
+            </section>
+
+            <!-- Right Panel: Registers + Pipeline -->
+            <section class="panel right-panel">
+                <!-- Registers -->
+                <div class="sub-panel registers-panel">
+                    <div class="panel-header">
+                        <h2>Registers</h2>
+                        <span id="reg-count" class="reg-count"></span>
+                    </div>
+                    <div id="registers-view" class="registers-view"></div>
+                </div>
+
+                <!-- Execution Pipeline -->
+                <div class="sub-panel pipeline-panel">
+                    <div class="panel-header">
+                        <h2>Execution Pipeline</h2>
+                    </div>
+                    <div id="pipeline-view" class="pipeline-view">
+                        <div class="pipeline-stage" data-stage="fetch">
+                            <span class="stage-label">FETCH</span>
+                            <span class="stage-content" id="stage-fetch">-</span>
+                        </div>
+                        <div class="pipeline-stage" data-stage="decode">
+                            <span class="stage-label">DECODE</span>
+                            <span class="stage-content" id="stage-decode">-</span>
+                        </div>
+                        <div class="pipeline-stage" data-stage="execute">
+                            <span class="stage-label">EXECUTE</span>
+                            <span class="stage-content" id="stage-execute">-</span>
+                        </div>
+                        <div class="pipeline-stage" data-stage="memory">
+                            <span class="stage-label">MEMORY</span>
+                            <span class="stage-content" id="stage-memory">-</span>
+                        </div>
+                        <div class="pipeline-stage" data-stage="writeback">
+                            <span class="stage-label">WRITEBACK</span>
+                            <span class="stage-content" id="stage-writeback">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Console Output -->
+                <div class="sub-panel console-panel">
+                    <div class="panel-header">
+                        <h2>Console Output</h2>
+                        <button id="btn-clear-console" class="small-btn">Clear</button>
+                    </div>
+                    <div id="console-output" class="console-output"></div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Status Bar -->
+        <footer class="status-bar">
+            <span id="status-text">Ready</span>
+            <span id="cycle-count">Cycles: 0</span>
+            <span id="instruction-count">Instructions: 0</span>
+            <span id="pc-display">PC: 0x00000000</span>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="src/js/architectures.js"></script>
+    <script src="src/js/compiler.js"></script>
+    <script src="src/js/codegen.js"></script>
+    <script src="src/js/cpu.js"></script>
+    <script src="src/js/examples.js"></script>
+    <script src="src/js/visualizer.js"></script>
+    <script src="src/js/app.js"></script>
+</body>
+</html>
