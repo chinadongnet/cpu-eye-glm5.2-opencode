@@ -271,8 +271,8 @@ class Visualizer {
     // Full Update
     // ============================================
     update(cpu, stepResult) {
-        const modifiedRegs = stepResult ? stepResult.modifiedRegs : new Set();
-        const modifiedMem = stepResult ? stepResult.modifiedMem : new Set();
+        const modifiedRegs = stepResult ? new Set(stepResult.modifiedRegs) : new Set();
+        const modifiedMem = stepResult ? new Set(stepResult.modifiedMem) : new Set();
 
         try {
             this.renderRegisters(cpu.registers, modifiedRegs, cpu.flags);
