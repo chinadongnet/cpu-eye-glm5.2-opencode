@@ -127,6 +127,8 @@ class Visualizer {
             let displayVal;
             if (typeof value === 'bigint') {
                 displayVal = `0x${value.toString(16).toUpperCase().padStart(hexWidth, '0')}`;
+            } else if (reg.size === 8 && value > 0xFFFFFFFF) {
+                displayVal = `0x${value.toString(16).toUpperCase().padStart(hexWidth, '0')}`;
             } else {
                 displayVal = `0x${(value >>> 0).toString(16).toUpperCase().padStart(hexWidth, '0')}`;
             }
@@ -176,7 +178,7 @@ class Visualizer {
 
         let html = `<div class="mem-section-label">${sectionLabel}</div>`;
         for (const row of rows) {
-            const addrStr = `0x${row.addr.toString(16).toUpperCase().padStart(8, '0')}`;
+            const addrStr = `0x${row.addr.toString(16).toUpperCase()}`;
             let hexStr = '';
             for (const b of row.bytes) {
                 if (b.value !== null) {
@@ -272,16 +274,22 @@ class Visualizer {
         const modifiedRegs = stepResult ? stepResult.modifiedRegs : new Set();
         const modifiedMem = stepResult ? stepResult.modifiedMem : new Set();
 
-        this.renderRegisters(cpu.registers, modifiedRegs, cpu.flags);
-        this.renderMemory(cpu, new Set(modifiedMem));
-        this.renderPipeline(stepResult ? stepResult.pipeline : null);
-        this.highlightCurrentInstruction(cpu.instructionIndex);
-        this.updateStatus(null, cpu);
-
-        if (stepResult && stepResult.halted) {
-            for (const out of cpu.output) {
-                this.appendConsole(out.text, out.type);
+        try {
+            this.renderRegisters(cpu.registers, modifiedRegs, cpu.flags);
+            this.renderMemory(cpu, new Set(modifiedMem));
+            this.renderPipeline(stepResult ? stepResult.pipeline : null);
+            if (cpu.instructionIndex >= 0 && cpu.instructionIndex < this.elements.assemblyView.querySelectorAll('.asm-instruction').length) {
+                this.highlightCurrentInstruction(cpu.instructionIndex);
             }
+            this.updateStatus(null, cpu);
+
+            if (stepResult && stepResult.halted) {
+                for (const out of cpu.output) {
+                    this.appendConsole(out.text, out.type);
+                }
+            }
+        } catch (err) {
+            console.error('Visualizer update error:', err);
         }
     }
 }

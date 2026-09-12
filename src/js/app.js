@@ -14,7 +14,7 @@ class App {
         this.compiled = false;
         this.running = false;
         this.runTimer = null;
-        this.runSpeed = 1000;
+        this.runSpeed = 500;
         this.instructions = [];
 
         this.initUI();
@@ -182,6 +182,7 @@ class App {
             this.setButtonsState(true);
 
         } catch (err) {
+            console.error('Compilation error:', err);
             this.setCompileStatus(`Compilation error: ${err.message}`, 'error');
             this.visualizer.appendConsole(`Error: ${err.message}`, 'error');
             this.compiled = false;
@@ -195,31 +196,10 @@ class App {
             return;
         }
 
-        const result = this.cpu.step();
-        this.visualizer.update(this.cpu, result);
-        this.visualizer.updateStatus('Stepping...', this.cpu);
-
-        if (result.halted) {
-            this.pause();
-            this.visualizer.updateStatus('Halted', this.cpu);
-            this.visualizer.appendConsole(`Execution complete. ${this.cpu.executedCount} instructions, ${this.cpu.cycles} cycles.`, 'success');
-            this.visualizer.appendConsole(`Return value: ${this.cpu.returnValue}`, 'success');
-        }
-    }
-
-    run() {
-        if (!this.cpu || this.cpu.halted) return;
-        this.running = true;
-        this.setButtonsState(true, true);
-        this.visualizer.updateStatus('Running...', this.cpu);
-
-        this.runTimer = setInterval(() => {
-            if (!this.cpu || this.cpu.halted) {
-                this.pause();
-                return;
-            }
+        try {
             const result = this.cpu.step();
             this.visualizer.update(this.cpu, result);
+            this.visualizer.updateStatus('Stepping...', this.cpu);
 
             if (result.halted) {
                 this.pause();
@@ -227,7 +207,47 @@ class App {
                 this.visualizer.appendConsole(`Execution complete. ${this.cpu.executedCount} instructions, ${this.cpu.cycles} cycles.`, 'success');
                 this.visualizer.appendConsole(`Return value: ${this.cpu.returnValue}`, 'success');
             }
-        }, this.runSpeed);
+        } catch (err) {
+            this.visualizer.updateStatus('Error: ' + err.message, this.cpu);
+            this.visualizer.appendConsole('Runtime error: ' + err.message, 'error');
+            console.error('CPU simulation error:', err);
+        }
+    }
+
+    run() {
+        if (!this.cpu || this.cpu.halted) {
+            this.visualizer.appendConsole('CPU not ready or already halted', 'warning');
+            return;
+        }
+        this.running = true;
+        this.setButtonsState(true, true);
+        this.visualizer.updateStatus('Running...', this.cpu);
+
+        const doStep = () => {
+            if (!this.cpu || this.cpu.halted) {
+                this.pause();
+                return;
+            }
+            try {
+                const result = this.cpu.step();
+                this.visualizer.update(this.cpu, result);
+
+                if (result.halted) {
+                    this.pause();
+                    this.visualizer.updateStatus('Halted', this.cpu);
+                    this.visualizer.appendConsole(`Execution complete. ${this.cpu.executedCount} instructions, ${this.cpu.cycles} cycles.`, 'success');
+                    this.visualizer.appendConsole(`Return value: ${this.cpu.returnValue}`, 'success');
+                }
+            } catch (err) {
+                this.pause();
+                this.visualizer.updateStatus('Error: ' + err.message, this.cpu);
+                this.visualizer.appendConsole('Runtime error: ' + err.message, 'error');
+                console.error('CPU simulation error:', err);
+            }
+        };
+
+        doStep();
+        this.runTimer = setInterval(doStep, this.runSpeed);
     }
 
     pause() {

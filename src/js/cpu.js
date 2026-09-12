@@ -254,16 +254,22 @@ class CPUSimulator {
                 this.instructionIndex++;
                 if (this.instructionIndex < this.instructions.length) {
                     this.pc = this.instructions[this.instructionIndex].address;
+                } else {
+                    this.halted = true;
                 }
             }
         } else if (result.jumpTarget !== undefined) {
             this.instructionIndex = result.jumpTarget;
             if (this.instructionIndex >= 0 && this.instructionIndex < this.instructions.length) {
                 this.pc = this.instructions[this.instructionIndex].address;
+            } else {
+                this.halted = true;
             }
         }
 
-        this.setReg(this.arch.pcRegister, this.pc);
+        if (!this.halted) {
+            this.setReg(this.arch.pcRegister, this.pc);
+        }
         this.executedCount++;
 
         return {
